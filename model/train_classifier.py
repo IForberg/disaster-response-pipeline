@@ -74,17 +74,32 @@ def tokenize(text):
 
 
 def build_model():
+    """
+    Build the machine learning model using Gridsearch
+    Inputs: None
+    Output: cv = best model found by Gridsearch given the parameters
+    """
+    # Make a pipeline
     pipeline = Pipeline([
        ('vect', CountVectorizer(tokenizer=tokenize)),
        ('tfidf', TfidfTransformer()),
        ('clf', MultiOutputClassifier(RandomForestClassifier()))
        ])
     
-    parameters = {'clf__estimator__criterion': ['gini'],
-                  'clf__estimator__max_leaf_nodes': [7],
-                  'clf__estimator__min_samples_split': [2],
-                  'clf__estimator__n_estimators': [100]
-
+    # Parameters for use in the Gridsearch
+    # Can take hours depending on the number of parameters
+    parameters = {
+        'tfidf__use_idf': (True, False),
+        'clf__estimator__min_samples_split': [2, 3],
+        'clf__estimator__criterion': ['entropy', 'gini'],
+        'clf__estimator__max_leaf_nodes' : [2, 5, 7],
+        'clf__estimator__n_estimators': [50, 100, 150 ],
+    }
+    
+    cv = GridSearchCV(pipeline, param_grid = parameters)
+    
+    return cv
+    
 
 def evaluate_model(model, X_test, Y_test, category_names):
     """
@@ -111,17 +126,17 @@ def main():
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
-        X, Y, category_names = load_data(database_filepath)
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+        X, y, category_names = load_data(database_filepath)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
         
         print('Building model...')
         model = build_model()
         
         print('Training model...')
-        model.fit(X_train, Y_train)
+        model.fit(X_train, y_train)
         
         print('Evaluating model...')
-        evaluate_model(model, X_test, Y_test, category_names)
+        evaluate_model(model, X_test, y_test, category_names)
 
         print('Saving model...\n    MODEL: {}'.format(model_filepath))
         save_model(model, model_filepath)
