@@ -2,6 +2,10 @@ import sys
 import pandas as pd
 from sqlalchemy import create_engine
 
+"""
+This module loads two csv-files, cleans and merges them
+and saves the cleaned file to a database
+"""
 
 def load_data(messages_filepath, categories_filepath):
     """
@@ -12,8 +16,8 @@ def load_data(messages_filepath, categories_filepath):
     Output: Two data frames. One for each file
     """
     # Load two csv files
-    messages = pd.read_csv("messages_filepath")
-    categories = pd.read_csv("categories_filepath")
+    messages = pd.read_csv(messages_filepath)
+    categories = pd.read_csv(categories_filepath)
     
     # Merge the two files using the common id
     df = messages.merge(categories, on = 'id')
@@ -50,6 +54,9 @@ def clean_data(df):
     # rows since we can't be sure of the reason
     categories = categories[categories.related != 2]
     
+    # Consider to drop child_alone because it only consists of 0s and has no predictive power
+    #categories.drop(['child_alone'], axis=1, inplace=True)
+    
     # Drop the original category feature from main dataframe
     df.drop('categories', axis=1, inplace=True)
     
@@ -69,7 +76,7 @@ def save_data(df, database_filename):
     Inputs: df = dataframe we want to save to a database
             database_filename = What we want to call the database
     """
-    engine = create_engine('sqlite:///'+database_filename))
+    engine = create_engine('sqlite:///'+database_filename)
     df.to_sql('DataTable', engine, if_exists='replace', index=False)
     
     pass  
