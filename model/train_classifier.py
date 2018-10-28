@@ -25,7 +25,10 @@ import pickle
 """
 This module loads clean data from a database, tokenizes the
 text, creates a pipeline and trains a model. It then evaluates the
-model and saves it to a picle file
+model and saves it to a picle file.
+
+The dataset is fairly unbalanced with lots of 0s for every 1s
+in most features so metrics like the f1-score is impacted
 """
 
 
@@ -53,7 +56,8 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
-     """
+    
+    """
     Takes a text and tokenizes it by splitting
     it into separate words, lemmatizing it, converting
     to all lower case and stripping whitespace.
@@ -62,7 +66,7 @@ def tokenize(text):
     Output: tokenized text
     Credit: Function borrowed from a Udacity lesson
     """
-    tokens = word_tokenize(message)
+    tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
 
     clean_tokens = []
@@ -86,14 +90,15 @@ def build_model():
        ('clf', MultiOutputClassifier(RandomForestClassifier()))
        ])
     
-    # Parameters for use in the Gridsearch
-    # Can take hours depending on the number of parameters
+    # Parameters for use in the Gridsearch.
+    # Can take hours depending on the number of parameters.
     parameters = {
-        'tfidf__use_idf': (True, False),
-        'clf__estimator__min_samples_split': [2, 3],
-        'clf__estimator__criterion': ['entropy', 'gini'],
-        'clf__estimator__max_leaf_nodes' : [2, 5, 7],
-        'clf__estimator__n_estimators': [50, 100, 150 ],
+        'vect__ngram_range': ((1, 1), (1, 2)),
+        'vect__max_df': (0.5, 0.75, 1.0),
+        'clf__estimator__min_samples_split': [2, 4],
+        'clf__estimator__n_estimators': [50, 100, 150],
+        'clf__estimator__max_features': ['sqrt'],
+        'clf__estimator__criterion': ['entropy', 'gini']
     }
     
     cv = GridSearchCV(pipeline, param_grid = parameters)
@@ -101,7 +106,7 @@ def build_model():
     return cv
     
 
-def evaluate_model(model, X_test, Y_test, category_names):
+def evaluate_model(model, X_test, y_test, category_names):
     """
     Function evalutes the model on a test set
     Inputs:
@@ -111,7 +116,8 @@ def evaluate_model(model, X_test, Y_test, category_names):
         category_names: Array of category names (string)
     """
     y_preds = model.predict(X_test)
-    print(classification_report(y_preds, y_test.values, target_names=category_name))
+    print(classification_report(y_preds, y_test.values, target_names=category_names))
+    print("-" * 45)
     print("**** Accuracy scores for each category *****\n")
     # The feature child_alone was dropped so will loop over 35 features
     for i in range(35):
@@ -119,7 +125,15 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
-    pass
+    """
+    Saves the trained model in a pickle file
+    so you can use it on new data
+    
+    Inputs: model = Trained model
+            model_filepath = Where you want to save the pickle file
+    Output: Function doesn't return anything but saves model to a file
+    """
+    pickle.dump(model, open(model_filepath, 'wb'))
 
 
 def main():
@@ -127,7 +141,7 @@ def main():
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, y, category_names = load_data(database_filepath)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
         
         print('Building model...')
         model = build_model()
