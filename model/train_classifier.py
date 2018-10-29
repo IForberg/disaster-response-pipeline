@@ -91,17 +91,19 @@ def build_model():
        ])
     
     # Parameters for use in the Gridsearch.
-    # Can take hours depending on the number of parameters.
+    # Took about 50 minutes to run in Jupyter Notebook
+    # with better results than a trial that took 535 minutes!
     parameters = {
         'vect__ngram_range': ((1, 1), (1, 2)),
-        'vect__max_df': (0.5, 0.75, 1.0),
         'clf__estimator__min_samples_split': [2, 4],
-        'clf__estimator__n_estimators': [50, 100, 150],
-        'clf__estimator__max_features': ['sqrt'],
-        'clf__estimator__criterion': ['entropy', 'gini']
+        'clf__estimator__n_estimators': [50, 100],
+        'clf__estimator__criterion': ['entropy', 'gini'],
+        'clf__estimator__class_weight' : ['balanced']
+        
     }
+
     
-    cv = GridSearchCV(pipeline, param_grid = parameters)
+    cv = GridSearchCV(pipeline, param_grid = parameters, verbose = 1)
     
     return cv
     
@@ -119,8 +121,8 @@ def evaluate_model(model, X_test, y_test, category_names):
     print(classification_report(y_preds, y_test.values, target_names=category_names))
     print("-" * 45)
     print("**** Accuracy scores for each category *****\n")
-    # The feature child_alone was dropped so will loop over 35 features
-    for i in range(35):
+    # Loop over 36 features
+    for i in range(36):
         print("Accuracy score for " + y_test.columns[i], accuracy_score(y_test.values[:,i],y_preds[:,i]))
 
 
