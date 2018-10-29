@@ -23,6 +23,18 @@ After running the line go to http://0.0.0.0:3001/
 
 ## Files
 
-`process.py
+### data directory
+`process_data.py`
+Contains the code for loading the csv-files, cleaning and merging them and saving the cleaned file to
+an SQLite database
 
+`DisasterResponse.db`
+An SQLite database containing the cleaned data
 
+`disaster_categories.csv` and `disaster_messages.csv`
+The source files that were loaded and cleaned for NLP processing and analysis
+
+### model directory
+`train_classifyer.py`
+Code that loads the data from the SQLite database, tokenizes the data, runs a grid search, trains
+and evaluates a random forest model and saves the trained model to a Pickle file.
